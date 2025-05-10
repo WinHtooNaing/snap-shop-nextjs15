@@ -1,7 +1,13 @@
 "use server";
 import { eq } from "drizzle-orm";
 import { db } from "..";
-import { emailVerificationToken, users } from "../schema";
+import {
+  emailVerificationToken,
+  resetPasswordToken,
+  twoFactorTokens,
+  users,
+} from "../schema";
+import crypto from "crypto";
 const checkEmailVerificationToken = async (
   email: string | null,
   token?: string
@@ -75,4 +81,86 @@ export const confirmEmailWithToken = async (token: string) => {
     .where(eq(emailVerificationToken.id, existingToken.id));
 
   return { success: "Email verified successfully" };
+};
+
+// --------------- reset password -----------------------------//
+const checkResetPasswordToken = async (email: string) => {
+  try {
+    const passwordResetToken = await db.query.resetPasswordToken.findFirst({
+      where: eq(resetPasswordToken.email, email),
+    });
+
+    return passwordResetToken;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const generatePasswordResetToken = async (email: string) => {
+  const token = crypto.randomUUID();
+  const expires = new Date(new Date().getTime() + 30 * 60 * 1000);
+  const existingToken = await checkResetPasswordToken(email);
+
+  if (existingToken) {
+    await db
+      .delete(resetPasswordToken)
+      .where(eq(resetPasswordToken.id, existingToken.id));
+  }
+  const passwordResetToken = await db
+    .insert(resetPasswordToken)
+    .values({
+      email,
+      token,
+      expires,
+    })
+    .returning();
+  return passwordResetToken;
+};
+
+export const checkPasswordResetTokenByToken = async (token: string) => {
+  try {
+    const passwordResetToken = await db.query.resetPasswordToken.findFirst({
+      where: eq(resetPasswordToken.token, token),
+    });
+
+    return passwordResetToken;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getTwoFactorCodeByEmail = async (email: string) => {
+  try {
+    const existingCode = await db.query.twoFactorTokens.findFirst({
+      where: eq(twoFactorTokens.email, email),
+    });
+    return existingCode;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const generateTwoFactorCode = async (email: string) => {
+  try {
+    const code = crypto.randomInt(100_000, 1_000_000).toString();
+    const expires = new Date(new Date().getTime() + 30 * 60 * 1000);
+
+    const existingCode = await getTwoFactorCodeByEmail(email);
+    if (existingCode) {
+      await db
+        .delete(twoFactorTokens)
+        .where(eq(twoFactorTokens.id, existingCode.id));
+    }
+    const twoFactorCode = await db
+      .insert(twoFactorTokens)
+      .values({
+        email,
+        token: code,
+        expires,
+      })
+      .returning();
+    return twoFactorCode;
+  } catch (error) {
+    null;
+  }
 };

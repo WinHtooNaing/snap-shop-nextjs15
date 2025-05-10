@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@/types/login-schema";
@@ -20,16 +20,24 @@ import { z } from "zod";
 import { useAction } from "next-safe-action/hooks";
 import { login } from "@/server/actions/login";
 import { toast } from "sonner";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 const Login = () => {
+  const [isTwoFactorOn, setIsTwoFactorOn] = useState(false);
   const form = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
+      code: "",
     },
   });
-  const { execute, result, status } = useAction(login, {
+  const { execute, status, result } = useAction(login, {
     onSuccess({ data }) {
       if (data?.error) {
         toast.error(data?.error);
@@ -38,70 +46,107 @@ const Login = () => {
       if (data?.success) {
         toast.success(data?.success);
       }
+      if (data?.twoFactor) {
+        toast.success(data?.twoFactor);
+        setIsTwoFactorOn(true);
+      }
     },
   });
   const onSubmit = (values: z.infer<typeof loginSchema>) => {
-    const { email, password } = values;
-    execute({ email, password });
+    const { email, password, code } = values;
+    execute({ email, password, code });
   };
   return (
     <>
       <AuthForm
-        formTitle="Login to your account"
+        formTitle={isTwoFactorOn ? "Place your code" : "Login to your account"}
         footerHref="/auth/register"
         footerLabel="Don't have an account?"
         showProvider={true}
       >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div>
+            {isTwoFactorOn && (
               <FormField
                 control={form.control}
-                name="email"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>We sent a code to your email.</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="snapshop@gmail.com" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <br />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
+                      <InputOTP
+                        maxLength={6}
                         {...field}
-                        placeholder="********"
-                        type="password"
-                      />
+                        disabled={status === "executing"}
+                        className=""
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
-              <br />
-              <Button size={"sm"} variant={"link"}>
-                <Link href={"/auth/forgot"} className="mb-2">
-                  Forgot Password?
-                </Link>
-              </Button>
-            </div>
+            )}
+            {!isTwoFactorOn && (
+              <div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="snapshop@gmail.com" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <br />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="********"
+                          type="password"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <br />
+                <Button size={"sm"} variant={"link"}>
+                  <Link href={"/auth/reset"} className="">
+                    Forgot Password?
+                  </Link>
+                </Button>
+              </div>
+            )}
             <Button
               type="submit"
               className={cn(
-                "w-full mb-4",
+                "w-full mb-2 mt-4",
                 status === "executing" && "animate-pulse"
               )}
               disabled={status === "executing"}
             >
-              Login
+              {isTwoFactorOn ? "Verify Code" : "Login"}
             </Button>
           </form>
         </Form>

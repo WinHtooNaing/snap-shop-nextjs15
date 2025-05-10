@@ -1,5 +1,7 @@
 "use server";
 import EmailComfirimationTemplate from "@/components/email-template";
+import ResetPasswordEmail from "@/components/password-reset-email-template";
+import MagicCodeEmail from "@/components/two-factor-mail";
 import { getBaseUrl } from "@/lib/get-baseUrl";
 import { Resend } from "resend";
 const currentBaseUrl = getBaseUrl();
@@ -17,6 +19,36 @@ export const sendEmail = async (
     react: EmailComfirimationTemplate({
       userFirstname,
       comfirmEmailLink: comfirmLink,
+    }),
+  });
+
+  if (error) {
+    console.log(error);
+  }
+};
+export const sendPasswordResetEmail = async (email: string, token: string) => {
+  const resetLink = `${currentBaseUrl}/change-password?token=${token}`;
+
+  const { data, error } = await resend.emails.send({
+    from: "onboarding@resend.dev",
+    to: email,
+    subject: "Reset Your Password - Alert form SnapShop",
+    react: ResetPasswordEmail({
+      resetPasswordLink: resetLink,
+    }),
+  });
+
+  if (error) {
+    console.log(error);
+  }
+};
+export const sendTwoFactorEmail = async (email: string, code: string) => {
+  const { data, error } = await resend.emails.send({
+    from: "onboarding@resend.dev",
+    to: email,
+    subject: "Two Factor Authentication Code - SnapShop",
+    react: MagicCodeEmail({
+      code,
     }),
   });
 
