@@ -1,4 +1,5 @@
 import ChangePassword from "@/components/settings/change-password";
+import LogoutBtn from "@/components/settings/logout";
 import ProfileCard from "@/components/settings/profile-card";
 import SettingCard from "@/components/settings/setting-card";
 import TwoFactor from "@/components/settings/two-factor";
@@ -24,6 +25,7 @@ const Settings = async () => {
               />
             </>
           )}
+          <LogoutBtn />
         </main>
       </SettingCard>
     </>

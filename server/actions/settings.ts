@@ -1,5 +1,9 @@
 "use server";
-import { settingsSchema, twoFactorSchema } from "@/types/settings-schema";
+import {
+  avatarSchema,
+  settingsSchema,
+  twoFactorSchema,
+} from "@/types/settings-schema";
 import { actionClient } from "./safe-action";
 import { db } from "@/server";
 import { eq } from "drizzle-orm";
@@ -35,4 +39,21 @@ export const twoFactorToggler = actionClient
       .where(eq(users.email, email));
     revalidatePath("/dashboard/settings");
     return { success: "Two factor setting saved" };
+  });
+
+export const profileAvatarUpdate = actionClient
+  .schema(avatarSchema)
+  .action(async ({ parsedInput: { image, email } }) => {
+    if (!image) {
+      return { error: "Image is required" };
+    }
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    if (!existingUser) {
+      return { error: "Something went wrong" };
+    }
+    await db.update(users).set({ image }).where(eq(users.email, email));
+    revalidatePath("/dashboard/settings");
+    return { success: "Profile Image Updated" };
   });

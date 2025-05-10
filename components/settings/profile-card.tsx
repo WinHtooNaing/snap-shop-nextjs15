@@ -26,6 +26,7 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import ProfileForm from "./profile-form";
+import AvatarUploadForm from "./avatar-upload-form";
 
 type ProfileCardProps = {
   session: Session;
@@ -40,13 +41,12 @@ const ProfileCard = ({ session }: ProfileCardProps) => {
   return (
     <SettingCard>
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 flex-col lg:flex-row">
-          <Avatar className="w-14 h-14">
-            <AvatarImage src={session.user?.image!} alt="profile" />
-            <AvatarFallback className="bg-primary text-white font-bold">
-              {session.user?.name?.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex items-start gap-2 flex-col sm:flex-row ">
+          <AvatarUploadForm
+            name={session.user?.name}
+            image={session.user?.image}
+            email={session.user.email}
+          />
           <div>
             <p className="text-sm font-medium text-muted-foreground">
               Display Name
