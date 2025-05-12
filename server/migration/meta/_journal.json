@@ -29,6 +29,13 @@
       "when": 1746788115317,
       "tag": "0003_dizzy_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747029554043,
+      "tag": "0004_majestic_starhawk",
+      "breakpoints": true
     }
   ]
 }
